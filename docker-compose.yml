@@ -1,0 +1,87 @@
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: hospital_postgres
+    environment:
+      POSTGRES_USER: hospital_user
+      POSTGRES_PASSWORD: hospital_password
+      POSTGRES_DB: hospital_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - hospital_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hospital_user -d hospital_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: hospital_backend
+    environment:
+      DATABASE_URL: "postgresql://hospital_user:hospital_password@postgres:5432/hospital_db"
+      NODE_ENV: "development"
+      PORT: "3000"
+    ports:
+      - "3000:3000"
+    networks:
+      - hospital_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    command: >
+      sh -c "
+        pnpm run prisma:generate &&
+        pnpm run prisma:deploy &&
+        pnpm run start:dev
+      "
+
+  client:
+    image: node:20-alpine
+    container_name: hospital_client
+    working_dir: /app
+    environment:
+      VITE_API_BASE_URL: "http://localhost:3000"
+      HOST: "0.0.0.0"
+      PORT: "5173"
+      NODE_ENV: "development"
+    ports:
+      - "5173:5173"
+    networks:
+      - hospital_network
+    depends_on:
+      - server
+    volumes:
+      - ./client:/app
+    command: >
+      sh -c "
+        corepack enable && corepack prepare pnpm@latest --activate && \
+        pnpm install --force && \
+        pnpm run dev --host 0.0.0.0 --port 5173
+      "
+
+  # adminer:
+  #   image: adminer
+  #   container_name: hospital_adminer
+  #   ports:
+  #     - "8080:8080"
+  #   networks:
+  #     - hospital_network
+  #   depends_on:
+  #     - postgres
+
+volumes:
+  postgres_data:
+
+networks:
+  hospital_network:
+    driver: bridge
