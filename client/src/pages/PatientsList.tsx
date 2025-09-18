@@ -8,31 +8,26 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function PatientsList() {
 	const list = usePatientsStore((state) => state.list);
-	const loadPatients = usePatientsStore((state) => state.actions.loadPatients);
+	const loadAllPatients = usePatientsStore((state) => state.actions.loadAllPatients);
 	const setSearch = usePatientsStore((state) => state.actions.setSearch);
 
 	// Используем наш новый хук для пагинации
 	const pagination = usePagination(list.total, 50);
 
-	// Начальная загрузка данных
+	// Начальная загрузка ВСЕХ пациентов в кэш
 	useEffect(() => {
-		loadPatients({
-			page: 1,
-			pageSize: 50,
-			search: ''
-		});
+		if (list.allPatients.length === 0) {
+			loadAllPatients();
+		}
 	}, []);
 
-	// Загружаем данные при изменении пагинации (только если уже есть данные)
+	// Применяем фильтрацию при изменении пагинации или поиска
+	const filterPatients = usePatientsStore((state) => state.actions.filterPatients);
 	useEffect(() => {
-		if (list.total > 0) {
-			loadPatients({
-				page: pagination.state.currentPage,
-				pageSize: pagination.state.pageSize,
-				search: list.search
-			});
+		if (list.allPatients.length > 0) {
+			filterPatients(pagination.state.currentPage, pagination.state.pageSize);
 		}
-	}, [pagination.state.currentPage, pagination.state.pageSize, list.search]);
+	}, [pagination.state.currentPage, pagination.state.pageSize, list.search, list.allPatients.length]);
 
 
 	return (
@@ -52,20 +47,25 @@ export default function PatientsList() {
 					<div className="flex gap-2">
 						<Input
 							type="text"
-							placeholder="Поиск по имени/телефону"
+							placeholder="Поиск по имени/телефону/email"
 							value={list.search}
-							onChange={(e) => setSearch(e.target.value)}
+							onChange={(e) => {
+								setSearch(e.target.value);
+								pagination.actions.goToFirstPage();
+							}}
 						/>
-						<Button onClick={() => {
-							pagination.actions.goToFirstPage();
-						}}>
-							Искать
+						<Button
+							variant="outline"
+							onClick={loadAllPatients}
+							disabled={list.cacheLoading}
+						>
+							{list.cacheLoading ? 'Загрузка...' : 'Искать'}
 						</Button>
 					</div>
 				</CardContent>
 			</Card>
 
-			{list.loading && <div className="text-center py-4">Загрузка...</div>}
+			{list.cacheLoading && <div className="text-center py-4">Загрузка всех пациентов...</div>}
 			{list.error && <div className="text-red-500 text-center py-4">Ошибка: {list.error}</div>}
 
 			<div className="grid gap-4">

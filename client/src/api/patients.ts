@@ -35,4 +35,15 @@ export async function updatePatient(id: string, input: UpsertPatientInput): Prom
 	const { id: _, ...body } = input; // Исключаем id из тела запроса
 	const { data } = await http.patch<Patient>(`/patients/${id}`, body);
 	return data;
-} 
+}
+
+export async function deletePatient(id: string): Promise<void> {
+	await http.delete(`/patients/${id}`);
+}
+
+export async function fetchAllPatients(): Promise<Patient[]> {
+	const { data } = await http.get<PaginatedResponse<Patient>>('/patients', {
+		limit: 999999 // Загружаем всех пациентов
+	});
+	return data.data; // Возвращаем массив пациентов из PaginatedResponse
+}

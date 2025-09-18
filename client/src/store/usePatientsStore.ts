@@ -1,13 +1,15 @@
 import { create } from 'zustand';
 import type { Patient, Visit, PaginatedResponse } from '../types';
-import { fetchPatients, fetchPatientById, createPatient, updatePatient } from '../api/patients';
+import { fetchPatients, fetchPatientById, createPatient, updatePatient, deletePatient, fetchAllPatients } from '../api/patients';
 import { fetchVisits, createVisit, updateVisit } from '../api/visits';
 
 interface PatientsListState {
 	items: Patient[];
+	allPatients: Patient[]; // КЭШ всех пациентов
 	total: number;
 	search: string;
 	loading: boolean;
+	cacheLoading: boolean; // Загрузка кэша
 	error?: string;
 }
 
@@ -24,8 +26,11 @@ interface PatientDetailsState {
 interface PatientsActions {
 	setSearch: (q: string) => void;
 	loadPatients: (opts?: { page?: number; pageSize?: number; search?: string }) => Promise<void>;
+	loadAllPatients: () => Promise<void>; // Загрузка всех пациентов в кэш
+	filterPatients: (page?: number, pageSize?: number) => void; // Фильтрация кэша по search
 	loadPatientDetails: (id: string) => Promise<void>;
 	savePatient: (input: Partial<Patient> & { id?: string }) => Promise<Patient | undefined>;
+	deletePatient: (id: string) => Promise<boolean>;
 	loadVisits: (patientId: string, opts?: { page?: number; pageSize?: number }) => Promise<void>;
 	saveVisit: (patientId: string, input: Partial<Visit> & { id?: string }) => Promise<Visit | undefined>;
 	clearError: () => void;
@@ -38,9 +43,11 @@ export const usePatientsStore = create<{
 }>((set, get) => ({
 	list: {
 		items: [],
+		allPatients: [], // КЭШ всех пациентов
 		total: 0,
 		search: '',
 		loading: false,
+		cacheLoading: false,
 		error: undefined,
 	},
 	details: {
@@ -110,13 +117,95 @@ export const usePatientsStore = create<{
 		},
 		savePatient: async (input) => {
 			try {
+				let savedPatient;
 				if (input.id) {
-					return await updatePatient(input.id, input as any);
+					// Обновление существующего пациента
+					savedPatient = await updatePatient(input.id, input as any);
+					// Обновляем пациента в кэше
+					set((s) => ({
+						list: {
+							...s.list,
+							allPatients: s.list.allPatients.map(p =>
+								p.id === savedPatient.id ? savedPatient : p
+							)
+						}
+					}));
+				} else {
+					// Создание нового пациента
+					savedPatient = await createPatient(input as any);
+					// Добавляем нового пациента в кэш
+					set((s) => ({
+						list: {
+							...s.list,
+							allPatients: [savedPatient, ...s.list.allPatients]
+						}
+					}));
 				}
-				return await createPatient(input as any);
+				// Перефильтровываем данные после изменения кэша
+				get().actions.filterPatients();
+				return savedPatient;
 			} catch (e: any) {
 				set((s) => ({ list: { ...s.list, error: e.message } }));
 			}
+		},
+		deletePatient: async (id: string) => {
+			try {
+				await deletePatient(id);
+				// Удаляем пациента из кэша
+				set((s) => ({
+					list: {
+						...s.list,
+						allPatients: s.list.allPatients.filter(p => p.id !== id)
+					}
+				}));
+				// Перефильтровываем данные после удаления из кэша
+				get().actions.filterPatients();
+				return true;
+			} catch (e: any) {
+				set((s) => ({ list: { ...s.list, error: e.message } }));
+				return false;
+			}
+		},
+		loadAllPatients: async () => {
+			const st = get().list;
+			set({ list: { ...st, cacheLoading: true, error: undefined } });
+			try {
+				const allPatients = await fetchAllPatients();
+				set({ list: { ...st, allPatients, cacheLoading: false } });
+				// После загрузки кэша применяем фильтрацию
+				get().actions.filterPatients();
+			} catch (e: any) {
+				set({ list: { ...st, cacheLoading: false, error: e.message } });
+			}
+		},
+		filterPatients: (page = 1, pageSize = 50) => {
+			const st = get().list;
+			const { allPatients, search } = st;
+
+			let filtered = allPatients;
+
+			if (search.trim()) {
+				// Фильтруем по поисковой строке
+				filtered = allPatients.filter(patient =>
+					patient.firstName.toLowerCase().includes(search.toLowerCase()) ||
+					patient.lastName.toLowerCase().includes(search.toLowerCase()) ||
+					patient.phoneNumber.includes(search) ||
+					(patient.email && patient.email.toLowerCase().includes(search.toLowerCase()))
+				);
+			}
+
+			// Применяем пагинацию к отфильтрованным результатам
+			const startIndex = (page - 1) * pageSize;
+			const endIndex = startIndex + pageSize;
+			const paginatedItems = filtered.slice(startIndex, endIndex);
+
+			set({
+				list: {
+					...st,
+					items: paginatedItems,
+					total: filtered.length
+				}
+			});
 		},
 		// visits
 		loadVisits: async (patientId, { page, pageSize } = {}) => {
@@ -148,7 +237,9 @@ export const usePatientsStore = create<{
 			}
 		},
 
-		setSearch: (q) => set((s) => ({ list: { ...s.list, search: q } })),
+		setSearch: (q) => {
+			set((s) => ({ list: { ...s.list, search: q } }));
+		},
 		clearError: () => set((s) => ({
 			list: { ...s.list, error: undefined },
 			details: { ...s.details, error: undefined },

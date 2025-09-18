@@ -18,6 +18,7 @@ export default function PatientForm() {
 	const [phoneNumber, setPhoneNumber] = useState('');
 	const [email, setEmail] = useState('');
 	const [error, setError] = useState<string | undefined>();
+	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
 	useEffect(() => {
 		if (isEdit && id) {
@@ -51,6 +52,15 @@ export default function PatientForm() {
 		};
 		const saved = await actions.savePatient(isEdit ? { id, ...payload } : payload);
 		if (saved) navigate(`/patients/${saved.id}`);
+	};
+
+	const onDelete = async () => {
+		if (!id) return;
+		const success = await actions.deletePatient(id);
+		if (success) {
+			navigate('/patients');
+		}
+		setShowDeleteConfirm(false);
 	};
 
 	return (
@@ -127,13 +137,58 @@ export default function PatientForm() {
 
 						<div className="flex gap-2 pt-4">
 							<Button type="submit">Сохранить</Button>
+							{isEdit && (
+								<Button
+									type="button"
+									variant="outline"
+									className="border-red-500 text-red-500 hover:bg-red-50"
+									onClick={() => setShowDeleteConfirm(true)}
+								>
+									Удалить
+								</Button>
+							)}
 							<Button type="button" variant="outline" onClick={() => navigate(-1)}>
 								Отмена
 							</Button>
+							
 						</div>
 					</form>
 				</CardContent>
 			</Card>
+
+			{/* Модальное окно подтверждения удаления */}
+			{showDeleteConfirm && (
+				<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+					<Card className="w-full max-w-md mx-4">
+						<CardHeader>
+							<CardTitle>Подтверждение удаления</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<p className="mb-4">
+								Вы уверены, что хотите удалить пациента <strong>{firstName} {lastName}</strong>?
+							</p>
+							<p className="text-sm text-gray-600 mb-6">
+								Это действие нельзя отменить. Все связанные визиты также будут удалены.
+							</p>
+							<div className="flex gap-2 justify-end">
+								<Button
+									variant="outline"
+									onClick={() => setShowDeleteConfirm(false)}
+								>
+									Отмена
+								</Button>
+								<Button
+									variant="outline"
+									className="border-red-500 text-red-500 hover:bg-red-50"
+									onClick={onDelete}
+								>
+									Удалить
+								</Button>
+							</div>
+						</CardContent>
+					</Card>
+				</div>
+			)}
 		</div>
 	);
 }
