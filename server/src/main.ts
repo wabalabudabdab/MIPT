@@ -6,14 +6,12 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Enable CORS
   app.enableCors({
     origin: process.env.CORS_ORIGIN || '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
-  // Global validation pipe
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
@@ -22,10 +20,8 @@ async function bootstrap() {
     }),
   );
 
-  // Global prefix for API routes
   app.setGlobalPrefix('api');
 
-  // Swagger configuration
   const config = new DocumentBuilder()
     .setTitle('Hospital API')
     .setDescription('Hospital management system API')

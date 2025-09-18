@@ -68,7 +68,7 @@ export class PatientsService {
   }
 
   async update(id: string, updatePatientDto: UpdatePatientDto) {
-    await this.findOne(id); // Check if patient exists
+    await this.findOne(id); 
 
     return this.prisma.patient.update({
       where: { id },
@@ -82,7 +82,7 @@ export class PatientsService {
   }
 
   async remove(id: string) {
-    await this.findOne(id); // Check if patient exists
+    await this.findOne(id); 
 
     return this.prisma.patient.delete({
       where: { id },
@@ -178,7 +178,7 @@ export class PatientsService {
   }
 
   async getPatientVisits(id: string, page = 1, limit = 10) {
-    await this.findOne(id); // Check if patient exists
+    await this.findOne(id); 
 
     const skip = (page - 1) * limit;
 

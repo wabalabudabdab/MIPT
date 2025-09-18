@@ -8,7 +8,6 @@ export class VisitsService {
   constructor(private prisma: PrismaService) {}
 
   async create(createVisitDto: CreateVisitDto) {
-    // Check if patient exists
     const patient = await this.prisma.patient.findUnique({
       where: { id: createVisitDto.patientId },
     });
@@ -100,9 +99,8 @@ export class VisitsService {
   }
 
   async update(id: string, updateVisitDto: UpdateVisitDto) {
-    await this.findOne(id); // Check if visit exists
+    await this.findOne(id); 
 
-    // Check if patient exists if patientId is being updated
     if (updateVisitDto.patientId) {
       const patient = await this.prisma.patient.findUnique({
         where: { id: updateVisitDto.patientId },
@@ -128,7 +126,7 @@ export class VisitsService {
   }
 
   async remove(id: string) {
-    await this.findOne(id); // Check if visit exists
+    await this.findOne(id);
 
     return this.prisma.visit.delete({
       where: { id },

@@ -5,15 +5,15 @@
 ### Backend (NestJS)
 - NestJS + TypeScript
 - Prisma ORM + PostgreSQL
-- Swagger API документация
+- Swagger API
 
 ### Frontend (React)
 - React 19 + TypeScript
-- Vite для сборки
-- Zustand для управления состоянием
+- Vite 
+- Zustand 
 - shadcn/ui компоненты
-- Tailwind CSS для стилизации
-- React Router для навигации
+- Tailwind CSS 
+- React Router 
 
 ## Функциональность
 
@@ -38,14 +38,18 @@
 ### Через Docker (рекомендуется)
 
 ```bash
-# В корне проекта
+# В корне проекта MIPT
 docker compose up -d
 ```
 
+```bash
+docker compose down && docker compose up -d
+```
+
 Сервисы будут доступны:
-- Frontend: http://localhost:5173
+- Frontend: http://localhost:5173 
 - Backend API: http://localhost:3000
-- Adminer (DB): http://localhost:8080
+- Swagger http://localhost:3000/api/docs
 
 ### Локальный запуск
 
@@ -65,15 +69,48 @@ pnpm install
 pnpm dev
 ```
 
+### Загрузка тестовых данных
+
+```bash
+cd server
+pnpm run prisma:seed
+```
+
+Это создаст:
+- **4000 пациентов** с реальными российскими именами и данными
+- **~22000 визитов** (каждый пациент имеет от 0 до 11 визитов)
+- Медицинские диагнозы и лечения
+- Разные статусы визитов (запланированные, завершённые, отменённые)
+
+**Примечание:** Выполнение seed скрипта может занять несколько минут из-за большого объёма данных.
+
 ## API Endpoints
 
-- `GET /patients` - список пациентов
-- `POST /patients` - создать пациента
-- `GET /patients/:id` - получить пациента
-- `PATCH /patients/:id` - обновить пациента
-- `GET /patients/:id/visits` - визиты пациента
-- `POST /patients/:id/visits` - создать визит
-- `PATCH /patients/:id/visits/:visitId` - обновить визит
+### Patients
+- `GET /api/patients` - Get all patients with pagination
+- `GET /api/patients/:id` - Get patient by ID with visits
+- `POST /api/patients` - Create new patient
+- `PUT /api/patients/:id` - Update patient
+- `DELETE /api/patients/:id` - Delete patient
+- `GET /api/patients/search?q=query` - Search patients
+- `GET /api/patients/:id/visits` - Get patient's visits
+
+### Visits
+- `GET /api/visits` - Get all visits with filtering
+- `GET /api/visits/:id` - Get visit by ID
+- `POST /api/visits` - Create new visit
+- `PUT /api/visits/:id` - Update visit
+- `DELETE /api/visits/:id` - Delete visit
+- `GET /api/visits/by-status/:status` - Filter by status
+- `GET /api/visits/by-date-range?startDate=&endDate=` - Filter by date
+
+### Query Parameters
+- `page` - Page number (default: 1)
+- `limit` - Items per page (default: 10)
+- `status` - Visit status (SCHEDULED, COMPLETED, CANCELLED)
+- `startDate` - Filter visits from this date
+- `endDate` - Filter visits to this date
+
 
 ## Структура проекта
 
@@ -119,12 +156,9 @@ cd server
 pnpm run prisma:generate
 ```
 
-
-
  ## Prisma Studio
 
 ```bash
-cd /Users/a.terekhova/Desktop/MIPT/server
-
- pnpm exec prisma studio
+cd server
+pnpm exec prisma studio
  ```

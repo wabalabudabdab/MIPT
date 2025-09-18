@@ -23,6 +23,7 @@ services:
     build:
       context: ./server
       dockerfile: Dockerfile
+      target: development  # stage
     container_name: hospital_backend
     environment:
       DATABASE_URL: "postgresql://hospital_user:hospital_password@postgres:5432/hospital_db"
@@ -68,16 +69,6 @@ services:
         pnpm install --force && \
         pnpm run dev --host 0.0.0.0 --port 5173
       "
-
-  # adminer:
-  #   image: adminer
-  #   container_name: hospital_adminer
-  #   ports:
-  #     - "8080:8080"
-  #   networks:
-  #     - hospital_network
-  #   depends_on:
-  #     - postgres
 
 volumes:
   postgres_data:
