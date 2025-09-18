@@ -10,13 +10,13 @@
 - Swagger API
 
 ### Frontend (React)
+- Claude Code
 - React 19 + TypeScript
 - Vite 
 - Zustand 
 - shadcn/ui компоненты
 - Tailwind CSS 
 - React Router 
-- Claude Code
 
 ## Функциональность
 
