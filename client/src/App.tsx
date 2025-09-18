@@ -36,6 +36,7 @@ export default function App() {
 					<Route path="/patients/:id/edit" element={<PatientForm />} />
 					<Route path="/patients/:id" element={<PatientDetails />} />
 					<Route path="/patients/:id/visits/new" element={<VisitForm />} />
+					<Route path="/patients/:id/visits/:visitId/edit" element={<VisitForm />} />
 				</Routes>
 			</main>
 		</div>

@@ -9,7 +9,8 @@ import type { VisitStatus } from '@/types';
 
 export default function VisitForm() {
 	const navigate = useNavigate();
-	const { id: patientId } = useParams();
+	const { id: patientId, visitId } = useParams();
+	const isEdit = Boolean(visitId && visitId !== 'new');
 	const { details, actions } = usePatientsStore();
 
 	const [visitDate, setVisitDate] = useState('');
@@ -22,6 +23,20 @@ export default function VisitForm() {
 	useEffect(() => {
 		if (patientId && !details.current) actions.loadPatientDetails(patientId);
 	}, [patientId]);
+
+	// Загружаем данные визита для редактирования
+	useEffect(() => {
+		if (isEdit && visitId && details.visits.length > 0) {
+			const visit = details.visits.find(v => v.id === visitId);
+			if (visit) {
+				setVisitDate(visit.visitDate.slice(0, 16)); // формат datetime-local
+				setDiagnosis(visit.diagnosis);
+				setTreatment(visit.treatment);
+				setStatus(visit.status);
+				setNotes(visit.notes || '');
+			}
+		}
+	}, [isEdit, visitId, details.visits]);
 
 	const onSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -37,7 +52,7 @@ export default function VisitForm() {
 			treatment,
 			status,
 			notes: notes || undefined,
-		});
+		}, isEdit ? visitId : undefined);
 		if (saved) navigate(`/patients/${patientId}`);
 	};
 
@@ -49,7 +64,7 @@ export default function VisitForm() {
 				</Link>
 			</div>
 
-			<h1 className="text-3xl font-bold mb-6">Новый визит</h1>
+			<h1 className="text-3xl font-bold mb-6">{isEdit ? 'Редактирование визита' : 'Новый визит'}</h1>
 			
 			<Card>
 				<CardHeader>

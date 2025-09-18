@@ -32,7 +32,7 @@ interface PatientsActions {
 	savePatient: (input: Partial<Patient> & { id?: string }) => Promise<Patient | undefined>;
 	deletePatient: (id: string) => Promise<boolean>;
 	loadVisits: (patientId: string, opts?: { page?: number; pageSize?: number }) => Promise<void>;
-	saveVisit: (patientId: string, input: Partial<Visit> & { id?: string }) => Promise<Visit | undefined>;
+	saveVisit: (patientId: string, input: Partial<Visit>, visitId?: string) => Promise<Visit | undefined>;
 	clearError: () => void;
 }
 
@@ -226,10 +226,10 @@ export const usePatientsStore = create<{
 				set((state) => ({ details: { ...state.details, loading: false, error: e.message } }));
 			}
 		},
-		saveVisit: async (patientId, input) => {
+		saveVisit: async (patientId, input, visitId) => {
 			try {
-				if (input.id) {
-					return await updateVisit(patientId, input.id, input as any);
+				if (visitId) {
+					return await updateVisit(patientId, visitId, input as any);
 				}
 				return await createVisit(patientId, input as any);
 			} catch (e: any) {

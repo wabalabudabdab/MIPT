@@ -62,20 +62,27 @@ export default function PatientDetails() {
 									{details.visits.map(v => (
 										<div key={v.id} className="border rounded p-3">
 											<div className="flex justify-between items-start">
-												<div>
+												<div className="flex-1">
 													<p className="font-medium">{v.diagnosis}</p>
 													<p className="text-sm text-gray-600">{v.treatment}</p>
 													<p className="text-xs text-gray-500">
 														{v.visitDate.slice(0, 16).replace('T', ' ')}
 													</p>
 												</div>
-												<span className={`px-2 py-1 rounded text-xs ${
-													v.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
-													v.status === 'SCHEDULED' ? 'bg-blue-100 text-blue-800' :
-													'bg-red-100 text-red-800'
-												}`}>
-													{v.status}
-												</span>
+												<div className="flex items-center gap-2">
+													<span className={`px-2 py-1 rounded text-xs ${
+														v.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+														v.status === 'SCHEDULED' ? 'bg-blue-100 text-blue-800' :
+														'bg-red-100 text-red-800'
+													}`}>
+														{v.status}
+													</span>
+													<Link to={`/patients/${patient.id}/visits/${v.id}/edit`}>
+														<Button variant="outline" size="sm">
+															Редактировать
+														</Button>
+													</Link>
+												</div>
 											</div>
 										</div>
 									))}
