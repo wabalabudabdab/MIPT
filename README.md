@@ -16,6 +16,7 @@
 - shadcn/ui компоненты
 - Tailwind CSS 
 - React Router 
+- Claude Code
 
 ## Функциональность
 
